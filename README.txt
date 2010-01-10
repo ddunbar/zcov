@@ -48,6 +48,14 @@ License
 zcov is available under the BSD license. See LICENSE.txt.
 
 
+Dependencies
+============
+zcov has the following dependencies:
+
+* Python
+* enscript
+
+
 Credits
 =======
 zcov is written and maintained by Daniel Dunbar <daniel@zuster.org>
