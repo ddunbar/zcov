@@ -637,7 +637,8 @@ def main():
         return (path,lineData)
     covMap = dict(map(remap, allCovData.items()))
 
-    os.mkdir(output)
+    if not os.path.isdir(output):
+        os.mkdir(output)
 
     outputItems = []
 
