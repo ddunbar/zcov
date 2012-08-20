@@ -29,7 +29,7 @@ class GCDAData:
 ###
         
 kGCovFileRE = re.compile('^File \'([^\n]*)\'$', re.DOTALL|re.MULTILINE)
-kGCovFileAndOutputRE = re.compile('File \'([^\n]*)\'.*?:creating \'([^\n]*)\'',
+kGCovFileAndOutputRE = re.compile('File \'([^\n]*)\'.*?:?[cC]reating \'([^\n]*)\'',
                                   re.DOTALL|re.MULTILINE)
 
 def parseGCovFile(gcovPath, baseDir):
