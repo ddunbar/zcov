@@ -42,7 +42,7 @@ def parseGCovFile(gcovPath, baseDir):
     functionData = []
     for ln in file:
         ln = ln[:-1]
-        if ':' in ln:
+        if ':' in ln and not ln.startswith('function'):
             count,line,data = ln.split(':',2)
             line = int(line)
             count = count.strip()
@@ -112,13 +112,12 @@ def parseGCovFile(gcovPath, baseDir):
                 branchData.append((len(lineData)-1,num,code,count))
             elif ln.startswith('function '):
                 ln = ln[9:].strip()
-                name,data = ln.split(' ',1)
-                if data.startswith('called '):
-                    _,count,data = data.split(' ',2)
-                    count = int(count)
-                    # ignore other data
-                else:
-                    raise ValueError,'Unexpected function data: "%s"'%(data,)
+                called_idx = ln.find(' called ')
+                if called_idx == -1:
+                    raise ValueError,'Unexpected function data: "%s"'%(ln,)
+                name,data = ln[:called_idx],ln[called_idx+1:]
+                _,count,data = data.split(' ', 2)
+                # ignore other data
                 functionData.append((name,count))
             else:
                 raise ValueError,'Unexpected stray line: "%s"'%(ln.strip())
