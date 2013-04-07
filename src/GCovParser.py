@@ -124,9 +124,12 @@ def parseGCovFile(gcovPath, baseDir):
     return GCovFileData(keys,lineData,callData,branchData,functionData)
 
 def captureGCov(args):
+    env = os.environ.copy()
+    env['LANG'] = 'C'
     p = subprocess.Popen(args,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stderr=subprocess.PIPE,
+                         env=env)
     data,errdata = p.communicate()
     res = p.wait()
     if res:
