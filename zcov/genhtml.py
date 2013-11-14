@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 from __future__ import division
 
 from pprint import pprint
@@ -580,10 +578,12 @@ class CovData:
         f.close()
         return data
     
-def main():
+def action_genhtml(name, args):
+    """generate HTML report from coverage data files"""
+
     global opts
     from optparse import OptionParser
-    op = OptionParser("usage: %prog [options] input output")
+    op = OptionParser("usage: %%prog %s [options] input output" % (name,))
     op.add_option("", "--annotate-klee-cov",
                   action="append", dest="annotateKleeCov", default=[],
                   help="don't print status messages to stdout")
@@ -593,7 +593,7 @@ def main():
     op.add_option("", "--root",
                   action="store", dest="root", default=None,
                   help="root directory to view files from")
-    opts,args = op.parse_args()
+    opts,args = op.parse_args(args)
 
     if len(args) != 2:
         op.error('invalid number of arguments')
@@ -725,8 +725,3 @@ def main():
         writeSummary(node, output, not not covMap)
         
     writeResources(output)
-    
-if __name__=='__main__':
-    main()
-
-#rm -rf cu-html && ./zcov-genhtml cu.zcov cu-html && rsync -ar cu-html/ keeda:public_html/zcov-test
