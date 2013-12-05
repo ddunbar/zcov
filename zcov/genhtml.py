@@ -14,17 +14,12 @@ import Image
 ###
 
 kBarWidth = 100
-kRoundRectSize = 5
 
 kCoverageClasses = [
     (40,  'low',  (255,  0,  0), '#FF9999'),
     (80,  'mid',  (255,255,  0), '#FFFF60'),
     (None,'high', (0,  255,  0), '#80FF99'),
     ]
-kCovErrorClasses = [
-    (1, '#EEEEFF'),
-    (6, '#FFFF60'),
-    (None,'#FF9999')]
 
 kSummaryHeader = """\
 <html>
@@ -40,14 +35,7 @@ kSummaryHeader = """\
 
 
 <center>
-<table cellpadding=0 cellspacing=0 bgcolor=%(overviewTableBGColor)s>
-<tr>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-tl-%(roundRectSize)d.png"></td>
-  <td height=%(roundRectSize)d></td>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-tr-%(roundRectSize)d.png"></td>
-</tr>
-<tr><td width=%(roundRectSize)d></td><td>
-<table border="0" width="100%%" cellpadding=2>
+<table id="headertable" cellpadding=2>
   <tr>
     <td bgcolor=%(overviewKeyBGColor)s> <b>Files:</b> </td>
     <td bgcolor=%(overviewValueBGColor)s> %(numEntries)d </td>
@@ -72,27 +60,13 @@ kSummaryHeader = """\
     <td bgcolor=%(overviewValueBGColor)s align=right> %(totalCoveredLines)d&nbsp;/&nbsp;%(totalCoverableLines)d </td>
   </tr>
 </table>
-</td><td width=%(roundRectSize)d></td></tr>
-<tr>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-bl-%(roundRectSize)d.png"></td>
-  <td height=%(roundRectSize)d></td>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-br-%(roundRectSize)d.png"></td>
-</tr>
-</table>
 </center>
 <p>
 <hr>
 """
 kFileHeader = """\
 <center>
-<table cellpadding=0 cellspacing=0 bgcolor=%(overviewTableBGColor)s>
-<tr>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-tl-%(roundRectSize)d.png"></td>
-  <td height=%(roundRectSize)d></td>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-tr-%(roundRectSize)d.png"></td>
-</tr>
-<tr><td width=%(roundRectSize)d></td><td>
-<table border="0" width="100%%" cellpadding=2>
+<table id="fileheadertable" cellpadding=2>
   <tr>
     <td bgcolor=%(overviewKeyBGColor)s> <b>Programs:</b> </td>
     <td bgcolor=%(overviewValueBGColor)s> %(numPrograms)s </td>
@@ -100,13 +74,6 @@ kFileHeader = """\
     <td bgcolor=%(overviewKeyBGColor)s> <b>Runs</b> </td>
     <td bgcolor=%(overviewValueBGColor)s align=right> %(numRuns)s </td>
   </tr>
-</table>
-</td><td width=%(roundRectSize)d></td></tr>
-<tr>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-bl-%(roundRectSize)d.png"></td>
-  <td height=%(roundRectSize)d></td>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-br-%(roundRectSize)d.png"></td>
-</tr>
 </table>
 </center>
 <p>
@@ -121,14 +88,7 @@ Generated: %(generationTimestamp)s by <a href="http://minormatter.com/zcov">zcov
 
 kSummaryTableHeader = """\
 <center>
-<table width="80%%" cellpadding=0 cellspacing=0 bgcolor=%(summaryTableBGColor)s>
-<tr>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-tl-%(roundRectSize)d.png"></td>
-  <td height=%(roundRectSize)d></td>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-tr-%(roundRectSize)d.png"></td>
-</tr>
-<tr><td width=%(roundRectSize)d></td><td>
-<table class="sortable" border="0" width="100%%">
+<table id="summarytable" class="sortable" border="0" width="100%%">
   <thead>
   <tr>
     <th colspan=2 bgcolor=%(headerBGColor)s>
@@ -159,13 +119,6 @@ kSummaryTableRow = """\
   </tr>"""
 kSummaryTableFooter = """\
 </table>
-</td><td width=%(roundRectSize)d></td></tr>
-<tr>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-bl-%(roundRectSize)d.png"></td>
-  <td height=%(roundRectSize)d></td>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-br-%(roundRectSize)d.png"></td>
-</tr>
-</table>
 </center>"""
 
 a = "#" # Silly emacs hack
@@ -185,34 +138,6 @@ def writeResources(directory):
     a = Image.new('RGB',(1,1))
     a.putpixel((0,0),(255,255,255))
     a.save(os.path.join(directory,'white-dot.png'))
-    
-    'round-corner-tr-10.png'
-    def sample(x,y,w,h):
-        # Supersample because I am lazy
-        hits = 0
-        N = 4
-        sw,sh = w/N,h/N
-        for i in range(N):
-            for j in range(N):
-                sx,sy = x+sw*(i+.5),y+sh*(j+.5)
-                hits += (sx**2 + sy**2)**.5 <= 1.
-        return hits/(N*N)
-
-    N = kRoundRectSize
-    a = Image.new('RGBA',(N,N))
-    for x in range(N):
-        for y in range(N):
-            weight = sample(x/N,y/N,1/N,1/N)
-            p = int(255*(1.-weight))
-            a.putpixel((x,y),(255,255,255,p))
-        
-    a.save(os.path.join(directory,'round-corner-br-%d.png'%(kRoundRectSize,)))
-    a = a.transpose(Image.ROTATE_270)
-    a.save(os.path.join(directory,'round-corner-bl-%d.png'%(kRoundRectSize,)))
-    a = a.transpose(Image.ROTATE_270)
-    a.save(os.path.join(directory,'round-corner-tl-%d.png'%(kRoundRectSize,)))
-    a = a.transpose(Image.ROTATE_270)
-    a.save(os.path.join(directory,'round-corner-tr-%d.png'%(kRoundRectSize,)))
 
     base = os.path.dirname(os.path.realpath(__file__))
     f = open(os.path.join(directory,'sorttable.js'),'w')
@@ -375,10 +300,6 @@ def writeSummary(node, directory):
         elt[2] = i
     items.sort(key=lambda (e,_,__): e.elt)
     
-    roundRectSize = kRoundRectSize
-    overviewTableBGColor = '#C0C0C0'
-    summaryTableBGColor = '#C0C0C0'
-
     headerBGColor = '#5C5CEF'
     header2BGColor = '#ACACFF'
     rowBGColor = '#EEEEFF'
