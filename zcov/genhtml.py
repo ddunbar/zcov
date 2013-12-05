@@ -112,50 +112,12 @@ kFileHeader = """\
 <p>
 <hr>
 """
-kCovErrorFileHeader = """\
-<center>
-<table cellpadding=0 cellspacing=0 bgcolor=%(overviewTableBGColor)s>
-<tr>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-tl-%(roundRectSize)d.png"></td>
-  <td height=%(roundRectSize)d></td>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-tr-%(roundRectSize)d.png"></td>
-</tr>
-<tr><td width=%(roundRectSize)d></td><td>
-<table border="0" width="100%%" cellpadding=2>
-  <tr>
-    <td bgcolor=%(overviewKeyBGColor)s> <b>Coverage Errors:</b> </td>
-    <td bgcolor=%(overviewValueBGColor)s> %(numCovErrors)s </td>
-    <td width="30"></td>
-    <td bgcolor=%(overviewKeyBGColor)s> <b>Uncoverable Lines</b> </td>
-    <td bgcolor=%(overviewValueBGColor)s align=right> %(numUncoverable)d </td>
-  </tr>
-</table>
-</td><td width=%(roundRectSize)d></td></tr>
-<tr>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-bl-%(roundRectSize)d.png"></td>
-  <td height=%(roundRectSize)d></td>
-  <td><img width=%(roundRectSize)d height=%(roundRectSize)d src="round-corner-br-%(roundRectSize)d.png"></td>
-</tr>
-</table>
-</center>
-<p>
-<hr>
-"""
 
 kSummaryFooter = """\
 <hr>
 Generated: %(generationTimestamp)s by <a href="http://minormatter.com/zcov">zcov</a><br>
 </body>
 </html>"""
-
-kUseCovTableHeader = """\
-    <th width=1 bgcolor=%(headerBGColor)s sorttable_index=6 class="sorttable_numeric"> 
-      <font size=+2 color="#FFFFFF"><u>Errors</u></font> </th>"""
-kNoUseCovTableHeader = ""
-kUseCovTableHeader2 = """<th bgcolor=%(header2BGColor)s class="sorttable_nosort"> </th>"""
-kNoUseCovTableHeader2 = ""
-kUseCovTableRow = """<td width=1 align=right bgcolor=%(errorsBGColor)s>&nbsp;%(numCovErrors)d</td>"""
-kNoUseCovTableRow = ""
 
 kSummaryTableHeader = """\
 <center>
@@ -173,15 +135,13 @@ kSummaryTableHeader = """\
       <font size=+2 color="#FFFFFF"><u>Name</u></font> </th>
     <th colspan=4 bgcolor=%(headerBGColor)s sorttable_index=4 class="sorttable_numeric"> 
       <font size=+2 color="#FFFFFF"><u>Coverage</u></font> </th>
-    %(useCovTableHeader)s
-
+  </tr>
   <tr>
     <th colspan=2 bgcolor=%(header2BGColor)s class="sorttable_nosort"> </th>
     <th colspan=2 bgcolor=%(header2BGColor)s sorttable_index=2 class="sorttable_numeric">
       <font color="#FFFFFF"><u>Line</u></font> </th>
     <th colspan=2 bgcolor=%(header2BGColor)s sorttable_index=4 class="sorttable_numeric">
       <font color="#FFFFFF"><u>Branches Taken</u></font> </th>
-    %(useCovTableHeader2)s
   </tr>
   </thead>"""
 kSummaryTableRow = """\
@@ -196,7 +156,6 @@ kSummaryTableRow = """\
     <td width=1 align=right bgcolor=%(classBGColor)s>&nbsp;%(coveredLines)d&nbsp;/&nbsp;%(coverableLines)d&nbsp;lines</td>
     <td width=90 align=right sorttable_customkey=%(branchKey)d bgcolor=%(classBGColor)s><b>%(percentBranchesStr)s</b></td>
     <td width=1 align=right bgcolor=%(classBGColor)s>&nbsp;%(takenBranches)d&nbsp;/&nbsp;%(takeableBranches)d&nbsp;branches</td>
-    %(useCovTableRow)s
   </tr>"""
 kSummaryTableFooter = """\
 </table>
@@ -322,8 +281,6 @@ class PathNode:
         self.summary = None
         self.covErrors = None
         self.itemsSummary = None
-        self.uncovered = None
-        self.uncoverable = None
         
     def preorder(self):
         yield self
@@ -382,7 +339,7 @@ class PathNode:
         else:
             return self.parent.getStack() + [self]
         
-def writeSummary(node, directory, useCovInfo):
+def writeSummary(node, directory):
     path = os.path.join(directory, node.file)
     title = node.getPathString()
 
@@ -429,11 +386,6 @@ def writeSummary(node, directory, useCovInfo):
     overviewKeyBGColor = '#ACACFF'
     overviewValueBGColor = '#F0F0FF'
 
-    useCovTableHeader = [kNoUseCovTableHeader,
-                         kUseCovTableHeader][useCovInfo]%locals()
-    useCovTableHeader2 = [kNoUseCovTableHeader2,
-                          kUseCovTableHeader2][useCovInfo]%locals()
-
     f = open(path,'w')
     print >>f,kSummaryHeader%locals()
     if node.item is not None:
@@ -446,11 +398,6 @@ def writeSummary(node, directory, useCovInfo):
         numPrograms = entry.keys.get('Programs')
 
         print >>f,kFileHeader%locals()
-        if useCovInfo:
-            numCovErrors = node.uncovered and len(node.uncovered) or 0
-            numUncoverable = node.uncovered and len(node.uncoverable) or 0
-            print >>f,kCovErrorFileHeader%locals()
-            
         if not os.path.exists(path):
             print >>sys.stderr,'WARNING: Unable to find source for "%s"'%(path,)
             print >>f,'Unable to find source'
@@ -486,17 +433,6 @@ def writeSummary(node, directory, useCovInfo):
                 branchData[lnIdx] = branchData.get(lnIdx,[]) + [(num,code,count)]
             
             for i,ln in enumerate(lines[start:end]):
-                if useCovInfo and node.uncovered:
-                    data = node.uncovered.get(i+1)
-                    if data:
-                        pfx = '<a name="error%d">'%(i,)
-                        pfx += '<span class="lineNum">         </span>\n'
-                        for tc in data:
-                            pfx += '<span class="lineNum">         </span>'
-                            pfx += ' '*18
-                            pfx += '<span style="outline: #0f0 solid 2px;">KLEE expected: %s</span>\n'%(tc,)
-                        pfx += '<span class="lineNum">         </span>\n'
-                        f.write(pfx)
                 if i in branchData:
                     f.write('<span class="branchGroup">')
                 for (num,code,count) in branchData.get(i,()):
@@ -524,19 +460,9 @@ def writeSummary(node, directory, useCovInfo):
                 else:
                     print >>f
             print >>f,'</pre>'
-#        for i,ln in enumerate(lines[start:end]):
-#        print >>f,'\n'.join()
-#        print data
     else:
         print >>f,kSummaryTableHeader%locals()
         for i,(item,branchKey,lineKey) in enumerate(items):
-            numCovErrors = item.covErrors
-            for cclass in kCovErrorClasses:
-                if cclass[0] is None or numCovErrors < cclass[0]:
-                    break            
-            errorsBGColor = cclass[1]
-            useCovTableRow = [kNoUseCovTableRow,
-                              kUseCovTableRow][useCovInfo]%locals()
             itemName = '<a href="%s"> %s </a>'%(item.file,
                                                 item.getNodeString())
             coverageBar = ''
@@ -563,20 +489,6 @@ def writeSummary(node, directory, useCovInfo):
     
     print >>f,kSummaryFooter%locals()
     f.close()
-
-class CovData:
-    @staticmethod
-    def fromfile(path):
-        data = {}
-        f = open(path)
-        for ln in f:
-            if ln.strip():
-                cpath,cln = ln.split(':')
-                cln = int(cln)
-                data[cpath] = data.get(cpath,set())
-                data[cpath].add(cln)
-        f.close()
-        return data
     
 def action_genhtml(name, args):
     """generate HTML report from coverage data files"""
@@ -584,14 +496,7 @@ def action_genhtml(name, args):
     global opts
     from optparse import OptionParser
     op = OptionParser("usage: %%prog %s [options] input output" % (name,))
-    op.add_option("", "--annotate-klee-cov",
-                  action="append", dest="annotateKleeCov", default=[],
-                  help="don't print status messages to stdout")
-    op.add_option("", "--strip-cov-path",
-                  action="store", dest="stripKleeCovPath", default=None,
-                  help="don't print status messages to stdout")
-    op.add_option("", "--root",
-                  action="store", dest="root", default=None,
+    op.add_option("", "--root", action="store", dest="root", default=None,
                   help="root directory to view files from")
     opts,args = op.parse_args(args)
 
@@ -603,39 +508,6 @@ def action_genhtml(name, args):
         group = GCovGroup.GCovGroup.fromfile(input)
     except ValueError,e:
         op.error(e)
-
-    allCovData = {}
-    for f in opts.annotateKleeCov:
-        for path,dirnames,filenames in os.walk(f):
-            for wf in filenames:
-                if wf.endswith('.cov'):
-                    wp = os.path.join(path,wf)
-                    try:                    
-                        covData = CovData.fromfile(wp)
-                    except:
-                        print >>sys.stderr, 'WARNING: Unable to load .cov file: "%s"'%(wf,)
-                        continue
-                    
-                    for cpath,lines in covData.items():
-                        if opts.stripKleeCovPath:
-                            elts = cpath.split('/')
-                            if opts.stripKleeCovPath in elts:
-                                elts = elts[elts.index(opts.stripKleeCovPath):]
-                                cpath = '/'.join(elts)
-                        cpath = os.path.normpath(cpath)
-                        allCovData[cpath] = allCovData.get(cpath,[])
-                        allCovData[cpath].append( (wp,lines) )
-
-    # Invert allCovData into a form for easy processing by output
-    # files. path -> line -> [lines]
-    def remap((path,data)):
-        lineData = {}
-        for wf,lines in data:
-            for ln in lines:
-                lineData[ln] = lineData.get(ln,set())
-                lineData[ln].add(wf)
-        return (path,lineData)
-    covMap = dict(map(remap, allCovData.items()))
 
     if not os.path.isdir(output):
         os.mkdir(output)
@@ -687,41 +559,16 @@ def action_genhtml(name, args):
             else:
                 raise ValueError,'path key generation failed'                
             c.file = key+'.html'
-
-    # Add .cov info
-    for node in root.preorder():
-        # Look for .cov info:
-        elts = node.getPath()
-        if opts.stripKleeCovPath in elts:
-            elts = elts[elts.index(opts.stripKleeCovPath):]
-        cpath = '/'.join(elts)
-        covData = covMap.get(cpath)
-        if covData is not None:
-            uncovered = {}
-            if node.item is None:
-                raise ValueError,'.cov data for a non-item node!'
-            covered = dict([(i+1,count) for i,count in enumerate(node.item[1].lines)
-                            if count is not None])
-            uncoverable = dict([(ln,d) for ln,d in covData.items()
-                                if ln not in covered])
-            uncovered = dict([(ln,d) for ln,d in covData.items()
-                              if (not ln in uncoverable and
-                                  not covered.get(ln))])
-            node.uncovered = uncovered
-            node.uncoverable = uncoverable
             
     # Compute summary stats
     for c in root.postorder():
         if c.item:
             s = GcovSummary.fromfiledata(c.item[1])
-            t = c.uncovered and len(c.uncovered) or 0
         else:
             s = GcovSummary()
-            t = 0
-        c.summary = sum([kid.summary for kid in c.children],s)
-        c.covErrors = sum([kid.covErrors for kid in c.children],t)
+        c.summary = sum([kid.summary for kid in c.children], s)
         
     for node in root.preorder():
-        writeSummary(node, output, not not covMap)
+        writeSummary(node, output)
         
     writeResources(output)
