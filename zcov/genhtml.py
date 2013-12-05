@@ -9,7 +9,6 @@ import sys
 
 import GCovGroup
 from GCovParser import GCovFileData
-import Image
 
 ###
 
@@ -108,9 +107,9 @@ kSummaryTableRow = """\
   <tr>
     <td bgcolor=%(rowBGColor)s>%(itemName)s</td>
     <td width=120 align=center bgcolor=%(rowBGColor)s>
-      <table border=0 cellspacing=0 cellpadding=1><tr>
-      <td bgcolor="#000000"><img src="%(className)s-dot.png" width=%(barWidthLeft)d height=10><img src="white-dot.png" width=%(barWidthRight)d height=10></td>
-      </tr></table>
+      <div style="border:1px solid #000; background-color:#FFF; width:%(barTotalWidth)dpx;">
+        <div style="background-color:%(classBGColor)s; width:%(barWidthLeft)dpx; height:10px;" width="3px"></div>
+      </div>
     </td>
     <td width=90 align=right sorttable_customkey=%(lineKey)d bgcolor=%(classBGColor)s><b>%(percentLines).1f%%</b></td>
     <td width=1 align=right bgcolor=%(classBGColor)s>&nbsp;%(coveredLines)d&nbsp;/&nbsp;%(coverableLines)d&nbsp;lines</td>
@@ -121,8 +120,6 @@ kSummaryTableFooter = """\
 </table>
 </center>"""
 
-a = "#" # Silly emacs hack
-
 def safediv(a,b,default=None):
     try:
         return a/b
@@ -130,15 +127,6 @@ def safediv(a,b,default=None):
         return default
 
 def writeResources(directory):
-    for _,name,color,_ in kCoverageClasses:
-        a = Image.new('RGB',(1,1))
-        a.putpixel((0,0),color)
-        a.save(os.path.join(directory,'%s-dot.png'%(name,)))
-
-    a = Image.new('RGB',(1,1))
-    a.putpixel((0,0),(255,255,255))
-    a.save(os.path.join(directory,'white-dot.png'))
-
     base = os.path.dirname(os.path.realpath(__file__))
     f = open(os.path.join(directory,'sorttable.js'),'w')
     f.write(open(os.path.join(base, 'js/sorttable.js')).read())
@@ -402,8 +390,9 @@ def writeSummary(node, directory):
                 if cclass[0] is None or percentLines < cclass[0]:
                     break
             className = cclass[1]
-            barWidthLeft = kBarWidth*percentLines/100.
-            barWidthRight = kBarWidth - barWidthLeft
+            barTotalWidth = kBarWidth
+            barWidthLeft = int(barTotalWidth * percentLines / 100.0)
+            barWidthRight = barTotalWidth - barWidthLeft
             classBGColor = cclass[3]
             print >>f,kSummaryTableRow%locals()
         print >>f,kSummaryTableFooter%locals()

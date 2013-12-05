@@ -38,5 +38,5 @@ provided by gcov.
             ],
         },
 
-    install_requires=['PIL'],
+    install_requires=[],
 )
