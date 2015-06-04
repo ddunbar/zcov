@@ -29,7 +29,7 @@ class GCDAData:
 ###
         
 kGCovFileRE = re.compile('^File \'([^\n]*)\'$', re.DOTALL|re.MULTILINE)
-kGCovFileAndOutputRE = re.compile('File \'([^\n]*)\'.*?:?[cC]reating \'([^\n]*)\'',
+kGCovFileAndOutputRE = re.compile('File \'([^\n]*)\'.*?:?([cC]reating|Removing) \'([^\n]*)\'',
                                   re.DOTALL|re.MULTILINE)
 
 def parseGCovFile(gcovPath, baseDir):
@@ -162,7 +162,9 @@ def parseGCDA(gcdaPath,basePath=None):
 
     entries = []
     for res in kGCovFileAndOutputRE.finditer(data):
-        path,output = res.groups()
+        path,CreateRemove,output = res.groups()
+        if CreateRemove == "Removing":
+           continue
         path = os.path.realpath(path)
         entries.append((path, parseGCovFile(output, basePath)))
         os.remove(output)
