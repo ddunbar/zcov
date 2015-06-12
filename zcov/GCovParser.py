@@ -162,8 +162,8 @@ def parseGCDA(gcdaPath,basePath=None):
 
     entries = []
     for res in kGCovFileAndOutputRE.finditer(data):
-        path,CreateRemove,output = res.groups()
-        if CreateRemove == "Removing":
+        path,createRemove,output = res.groups()
+        if createRemove == "Removing":
            continue
         path = os.path.realpath(path)
         entries.append((path, parseGCovFile(output, basePath)))
